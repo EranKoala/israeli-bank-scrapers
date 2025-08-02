@@ -20,7 +20,11 @@ const INVALID_PASSWORD_MSG = 'אחד או יותר מפרטי ההזדהות ש�
 
 function getPossibleLoginResults() {
   const urls: LoginOptions['possibleResults'] = {
-    [LoginResults.Success]: [/ebanking\/SO\/SPA.aspx/i, /staticcontent\/digitalfront\/he/i, /staticcontent\/gate-keeper\/he/i],
+    [LoginResults.Success]: [
+      /ebanking\/SO\/SPA.aspx/i,
+      /staticcontent\/digitalfront\/he/i,
+      /staticcontent\/gate-keeper\/he/i,
+    ],
     [LoginResults.InvalidPassword]: [
       async options => {
         if (!options || !options.page) {
@@ -304,22 +308,27 @@ async function navigateToLogin(page: Page): Promise<void> {
 async function waitForPostLogin(page: Page): Promise<void> {
   debug('Waiting for post-login navigation...');
   console.log('[LEUMI DEBUG] Waiting for post-login navigation...');
-  
+
   // Use URL-based detection instead of problematic XPath
   await Promise.race([
     // Wait for successful navigation to Leumi's authenticated pages
-    page.waitForFunction(() => {
-      const url = window.location.href;
-      return url.includes('/ebanking/SO/SPA.aspx') || 
-             url.includes('/staticcontent/digitalfront/he') || 
-             url.includes('/staticcontent/gate-keeper/he');
-    }, { timeout: 60000 }),
+    page.waitForFunction(
+      () => {
+        const url = window.location.href;
+        return (
+          url.includes('/ebanking/SO/SPA.aspx') ||
+          url.includes('/staticcontent/digitalfront/he') ||
+          url.includes('/staticcontent/gate-keeper/he')
+        );
+      },
+      { timeout: 60000 },
+    ),
     // Still check for error elements, but use more reliable selectors
     waitUntilElementFound(page, 'a[title="דלג לחשבון"]', true, 60000),
     waitUntilElementFound(page, 'div.main-content', false, 60000),
     waitUntilElementFound(page, 'form[action="/changepassword"]', true, 60000),
   ]);
-  
+
   console.log('[LEUMI DEBUG] Post-login navigation completed, current URL:', page.url());
 }
 
