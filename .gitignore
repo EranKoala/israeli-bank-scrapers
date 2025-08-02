@@ -58,7 +58,7 @@ typings/
 .env
 
 # NPM package related
-lib/
+# lib/ - commenting out to include built files for GitHub installation
 
 # IDEs
 .idea
