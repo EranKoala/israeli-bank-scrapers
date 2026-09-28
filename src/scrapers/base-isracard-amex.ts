@@ -428,6 +428,15 @@ async function getExtraScrapAccount(
   return accounts.reduce((m, x) => ({ ...m, [x.accountNumber]: x }), {});
 }
 
+/** Whether a billing month falls inside additionalTransactionInformationMonths (no range = every month). */
+export function isMonthInRange(month: Moment, range?: { start: Date; end: Date }) {
+  return (
+    !range ||
+    (month.isSameOrAfter(moment(range.start).startOf('month')) &&
+      month.isSameOrBefore(moment(range.end).startOf('month')))
+  );
+}
+
 async function getAdditionalTransactionInformation(
   scraperOptions: ScraperOptions,
   accountsWithIndex: ScrapedAccountsWithIndex[],
@@ -441,7 +450,13 @@ async function getAdditionalTransactionInformation(
   ) {
     return accountsWithIndex;
   }
-  return runSerial(accountsWithIndex.map((a, i) => () => getExtraScrapAccount(page, options, a, allMonths[i])));
+  const range = scraperOptions.additionalTransactionInformationMonths;
+  return runSerial(
+    accountsWithIndex.map(
+      (a, i) => () =>
+        isMonthInRange(allMonths[i], range) ? getExtraScrapAccount(page, options, a, allMonths[i]) : Promise.resolve(a),
+    ),
+  );
 }
 
 async function fetchAllTransactions(

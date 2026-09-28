@@ -148,6 +148,14 @@ export type ScraperOptions = ScraperBrowserOptions & {
   additionalTransactionInformation?: boolean;
 
   /**
+   * Isracard / Amex only: fetch the additional transaction information only for billing months
+   * from `start` to `end` (inclusive, by month). Transactions of other months are still returned,
+   * without it. Lets a caller fill in older categories a few months at a time, since requesting
+   * details for a whole year at once gets blocked as automation.
+   */
+  additionalTransactionInformationMonths?: { start: Date; end: Date };
+
+  /**
    * Include the raw transaction object as received from the scraper source for debugging purposes.
    * @default false
    */

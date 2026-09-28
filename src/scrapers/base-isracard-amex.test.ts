@@ -1,4 +1,5 @@
-import { parseCardListBalances } from './base-isracard-amex';
+import moment from 'moment';
+import { isMonthInRange, parseCardListBalances } from './base-isracard-amex';
 
 describe('parseCardListBalances', () => {
   test('parses card balance, balance date, and credit frame from the card-list page', () => {
@@ -85,5 +86,21 @@ describe('parseCardListBalances', () => {
       balance: 0,
       cardFrame: 0,
     });
+  });
+});
+
+describe('isMonthInRange', () => {
+  const month = (ym: string) => moment(`${ym}-01`).startOf('month');
+
+  test('every month when no range is given', () => {
+    expect(isMonthInRange(month('2026-05'))).toBe(true);
+  });
+
+  test('inclusive at both ends, by month regardless of the day', () => {
+    const range = { start: new Date('2026-03-20'), end: new Date('2026-04-02') };
+    expect(isMonthInRange(month('2026-02'), range)).toBe(false);
+    expect(isMonthInRange(month('2026-03'), range)).toBe(true);
+    expect(isMonthInRange(month('2026-04'), range)).toBe(true);
+    expect(isMonthInRange(month('2026-05'), range)).toBe(false);
   });
 });
