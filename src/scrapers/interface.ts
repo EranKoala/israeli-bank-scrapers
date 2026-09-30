@@ -156,6 +156,13 @@ export type ScraperOptions = ScraperBrowserOptions & {
   additionalTransactionInformationMonths?: { start: Date; end: Date };
 
   /**
+   * Isracard / Amex only: how the additional transaction information requests are paced - batchSize
+   * requests in parallel, then a pause of delayMs (plus up to 500ms). Defaults to 10 and 2500ms.
+   * { batchSize: 1, delayMs: 3000 } is gentler on the site's automation detection.
+   */
+  additionalTransactionInformationPace?: { batchSize: number; delayMs: number };
+
+  /**
    * Include the raw transaction object as received from the scraper source for debugging purposes.
    * @default false
    */
