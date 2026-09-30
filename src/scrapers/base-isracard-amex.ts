@@ -8,7 +8,7 @@ import { getDebug } from '../helpers/debug';
 import { fetchGetWithinPage, fetchPostWithinPage } from '../helpers/fetch';
 import { chunk } from '../helpers/arrays';
 import { filterOldTransactions, fixInstallments, getRawTransaction } from '../helpers/transactions';
-import { randomDelay, runSerial, sleep } from '../helpers/waiting';
+import { randomDelay, runSerial } from '../helpers/waiting';
 import {
   TransactionStatuses,
   TransactionTypes,
@@ -406,6 +406,7 @@ async function getExtraScrapAccount(
   options: CompanyServiceOptions,
   accountMap: ScrapedAccountsWithIndex,
   month: moment.Moment,
+  pace: { batchSize: number; delayMs: number },
 ): Promise<ScrapedAccountsWithIndex> {
   const accounts: ScrapedAccountsWithIndex[string][] = [];
   for (const account of Object.values(accountMap)) {
@@ -414,12 +415,12 @@ async function getExtraScrapAccount(
       month.format('YYYY-MM'),
     );
     const txns: Transaction[] = [];
-    for (const txnsChunk of chunk(account.txns, RATE_LIMIT.TRANSACTIONS_BATCH_SIZE)) {
+    for (const txnsChunk of chunk(account.txns, pace.batchSize)) {
       debug(`processing chunk of ${txnsChunk.length} transactions for account ${account.accountNumber}`);
       const updatedTxns = await Promise.all(
         txnsChunk.map(t => getExtraScrapTransaction(page, options, month, account.index, t)),
       );
-      await sleep(RATE_LIMIT.SLEEP_BETWEEN);
+      await randomDelay(pace.delayMs, pace.delayMs + 500);
       txns.push(...updatedTxns);
     }
     accounts.push({ ...account, txns });
@@ -451,10 +452,16 @@ async function getAdditionalTransactionInformation(
     return accountsWithIndex;
   }
   const range = scraperOptions.additionalTransactionInformationMonths;
+  const pace = {
+    batchSize: scraperOptions.additionalTransactionInformationPace?.batchSize ?? RATE_LIMIT.TRANSACTIONS_BATCH_SIZE,
+    delayMs: scraperOptions.additionalTransactionInformationPace?.delayMs ?? RATE_LIMIT.SLEEP_BETWEEN,
+  };
   return runSerial(
     accountsWithIndex.map(
       (a, i) => () =>
-        isMonthInRange(allMonths[i], range) ? getExtraScrapAccount(page, options, a, allMonths[i]) : Promise.resolve(a),
+        isMonthInRange(allMonths[i], range)
+          ? getExtraScrapAccount(page, options, a, allMonths[i], pace)
+          : Promise.resolve(a),
     ),
   );
 }
